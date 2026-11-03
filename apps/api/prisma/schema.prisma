@@ -6,3 +6,49 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum DocumentStatus {
+  active
+  deleted
+  error
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  title       String
+  body        String
+  sourceUrl   String?
+  contentHash String
+  status      DocumentStatus @default(active)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  chunks      Chunk[]
+
+  @@map("documents")
+}
+
+model Chunk {
+  id          String                      @id
+  documentId  String
+  document    Document                    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex  Int
+  text        String
+  contentHash String
+  // Cosine and full-text indexes are created in the SQL migration. Prisma cannot represent them.
+  embedding   Unsupported("vector(1536)")
+  searchText  Unsupported("tsvector")     @default(dbgenerated("to_tsvector('english', text)"))
+
+  @@unique([documentId, chunkIndex])
+  @@map("chunks")
+}
+
+model ChatMessage {
+  id            String   @id @default(cuid())
+  question      String
+  answer        String
+  citedChunkIds String[]
+  usedModel     Boolean
+  createdAt     DateTime @default(now())
+
+  @@map("chat_messages")
+}
