@@ -1,0 +1,55 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateDocumentDto } from './dto/create-document.dto.js';
+import { UpdateDocumentDto } from './dto/update-document.dto.js';
+import { DocumentsService } from './documents.service.js';
+import { MAX_UPLOAD_BYTES, textFromUpload } from './extract-text.js';
+
+@Controller('api/documents')
+export class DocumentsController {
+  constructor(private readonly documents: DocumentsService) {}
+
+  @Get()
+  list() {
+    return this.documents.list();
+  }
+
+  @Get(':id')
+  get(@Param('id') id: string) {
+    return this.documents.get(id);
+  }
+
+  @Post()
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }))
+  async create(@Body() dto: CreateDocumentDto, @UploadedFile() file?: Express.Multer.File) {
+    const body = file ? await textFromUpload(file) : dto.body;
+    if (body === undefined) {
+      throw new BadRequestException('Provide document text or a .md, .txt, or .pdf file.');
+    }
+    return this.documents.save({ title: dto.title, body, sourceUrl: dto.sourceUrl });
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateDocumentDto) {
+    return this.documents.update(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(@Param('id') id: string) {
+    await this.documents.remove(id);
+  }
+}

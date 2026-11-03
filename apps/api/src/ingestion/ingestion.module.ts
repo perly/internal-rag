@@ -4,6 +4,6 @@ import { OpenAiEmbedder } from './openai-embedder.js';
 
 @Module({
   providers: [IngestionService, OpenAiEmbedder],
-  exports: [IngestionService],
+  exports: [IngestionService, OpenAiEmbedder],
 })
 export class IngestionModule {}

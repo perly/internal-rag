@@ -1,5 +1,11 @@
 export const EMBEDDING_DIMENSIONS = 1536;
 
+export class MissingApiKeyError extends Error {
+  constructor() {
+    super('OPENAI_API_KEY is required.');
+  }
+}
+
 export type Embedder = (inputs: string[]) => Promise<number[][]>;
 
 export function toVectorLiteral(values: number[]): string {

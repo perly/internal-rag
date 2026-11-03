@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OpenAI } from 'openai';
-import { EMBEDDING_DIMENSIONS, type Embedder } from './embedder.js';
+import { EMBEDDING_DIMENSIONS, MissingApiKeyError, type Embedder } from './embedder.js';
 
 export const EMBEDDING_MODEL = 'text-embedding-3-small';
 
@@ -8,7 +8,7 @@ export const EMBEDDING_MODEL = 'text-embedding-3-small';
 export class OpenAiEmbedder {
   readonly embed: Embedder = async (inputs) => {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) throw new Error('OPENAI_API_KEY is required to embed documents.');
+    if (!apiKey) throw new MissingApiKeyError();
     if (inputs.length === 0) return [];
 
     const client = new OpenAI({ apiKey });
