@@ -1,0 +1,14 @@
+{
+  "name": "internal-rag",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @internal-rag/api",
+    "dev:web": "npm run dev -w @internal-rag/web",
+    "build": "npm run build -w @internal-rag/api && npm run build -w @internal-rag/web"
+  }
+}

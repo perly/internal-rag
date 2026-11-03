@@ -1,0 +1,61 @@
+:root {
+  color: #1c1917;
+  background: #f6f3ee;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 36rem;
+  margin: 12vh auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.75rem;
+  color: #78716c;
+}
+
+h1 {
+  margin: 0.4rem 0 0;
+  font-size: 2.4rem;
+  font-weight: 500;
+}
+
+.lede {
+  color: #44403c;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  border-top: 1px solid #e7e5e4;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #e7e5e4;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.ok {
+  color: #3f6212;
+}
+
+.down {
+  color: #9f1239;
+}
+
+.loading {
+  color: #78716c;
+}
