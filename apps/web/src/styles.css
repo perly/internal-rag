@@ -118,6 +118,15 @@ nav button[aria-current='page'] {
   gap: 0.75rem;
 }
 
+.connections {
+  margin-bottom: 2rem;
+}
+
+.connections select {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+}
+
 .manage {
   display: grid;
   grid-template-columns: minmax(14rem, 18rem) 1fr;

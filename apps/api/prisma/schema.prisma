@@ -13,18 +13,75 @@ enum DocumentStatus {
   error
 }
 
-model Document {
-  id          String         @id @default(cuid())
-  title       String
-  body        String
-  sourceUrl   String?
-  contentHash String
-  status      DocumentStatus @default(active)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  chunks      Chunk[]
+enum DocumentOrigin {
+  manual
+  gdrive
+}
 
+enum Provider {
+  gdrive
+}
+
+enum ConnectionStatus {
+  active
+  error
+}
+
+enum SyncRunStatus {
+  running
+  success
+  error
+}
+
+model Document {
+  id           String           @id @default(cuid())
+  title        String
+  body         String
+  sourceUrl    String?
+  contentHash  String
+  status       DocumentStatus   @default(active)
+  origin       DocumentOrigin   @default(manual)
+  connectionId String?
+  connection   Connection?      @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  externalId   String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  chunks       Chunk[]
+
+  @@unique([connectionId, externalId])
   @@map("documents")
+}
+
+model Connection {
+  id           String           @id @default(cuid())
+  provider     Provider
+  displayName  String
+  credentials  String
+  folderId     String?
+  cursor       String?
+  lastSyncAt   DateTime?
+  status       ConnectionStatus @default(active)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  documents    Document[]
+  syncRuns     SyncRun[]
+
+  @@map("connections")
+}
+
+model SyncRun {
+  id           String        @id @default(cuid())
+  connectionId String
+  connection   Connection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  startedAt    DateTime      @default(now())
+  finishedAt   DateTime?
+  status       SyncRunStatus
+  createdCount Int           @default(0)
+  updatedCount Int           @default(0)
+  deletedCount Int           @default(0)
+  error        String?
+
+  @@map("sync_runs")
 }
 
 model Chunk {

@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-const summarySelect = { id: true, title: true, status: true, updatedAt: true } as const;
+const summarySelect = { id: true, title: true, status: true, origin: true, updatedAt: true } as const;
 const viewSelect = { id: true, title: true, body: true, sourceUrl: true, status: true, updatedAt: true } as const;
 
 export interface DocumentWrite {
@@ -33,7 +33,7 @@ export class DocumentRepo {
     return this.prismaService.document.create({ data, select: viewSelect });
   }
 
-  update(id: string, data: DocumentWrite) {
+  update(id: string, data: DocumentWrite & { sourceUrl?: string | null }) {
     return this.prismaService.document.update({ where: { id }, data });
   }
 
@@ -43,5 +43,19 @@ export class DocumentRepo {
 
   deleteById(id: string) {
     return this.prismaService.document.deleteMany({ where: { id } });
+  }
+
+  findByExternal(connectionId: string, externalId: string) {
+    return this.prismaService.document.findUnique({
+      where: { connectionId_externalId: { connectionId, externalId } },
+      select: { id: true, contentHash: true, status: true },
+    });
+  }
+
+  createSynced(data: DocumentWrite & { sourceUrl: string | null; connectionId: string; externalId: string }) {
+    return this.prismaService.document.create({
+      data: { ...data, origin: 'gdrive' },
+      select: viewSelect,
+    });
   }
 }

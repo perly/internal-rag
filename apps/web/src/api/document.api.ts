@@ -4,6 +4,7 @@ export interface DocumentSummary {
   id: string;
   title: string;
   status: 'active' | 'deleted' | 'error';
+  origin: 'manual' | 'gdrive';
   updatedAt: string;
 }
 

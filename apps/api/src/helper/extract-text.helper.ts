@@ -14,11 +14,11 @@ export const textFromUpload = async (file: Express.Multer.File): Promise<string>
     throw new BadRequestException('File is larger than 5 MB.');
   }
 
-  if (extension === 'pdf') return pdfText(file.buffer);
+  if (extension === 'pdf') return textFromPdf(file.buffer);
   return file.buffer.toString('utf8');
 };
 
-const pdfText = async (bytes: Buffer): Promise<string> => {
+export const textFromPdf = async (bytes: Buffer): Promise<string> => {
   try {
     const { text } = await extractText(new Uint8Array(bytes), { mergePages: true });
     return text;

@@ -9,6 +9,7 @@ import {
   type DocumentView,
   type SaveResult,
 } from '../api/document.api';
+import { Connections } from './Connections';
 
 const emptyDraft = { title: '', body: '', sourceUrl: '' };
 
@@ -94,6 +95,8 @@ export const Documents = () => {
   };
 
   return (
+    <>
+    <Connections onSynced={() => { refresh().catch(() => undefined); }} />
     <section className="manage">
       <div>
         <div className="row">
@@ -176,6 +179,7 @@ export const Documents = () => {
         {error ? <p className="error">{error}</p> : null}
       </form>
     </section>
+    </>
   );
 };
 

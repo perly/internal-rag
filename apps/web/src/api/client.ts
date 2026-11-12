@@ -1,4 +1,4 @@
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const messageFrom = async (response: Response): Promise<string> => {
   const body = (await response.json().catch(() => null)) as { message?: string | string[] } | null;
