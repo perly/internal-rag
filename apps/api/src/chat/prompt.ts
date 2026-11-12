@@ -10,7 +10,7 @@ export interface PromptMessage {
   content: string;
 }
 
-export function buildMessages(question: string, chunks: PromptChunk[]): PromptMessage[] {
+export const buildMessages = (question: string, chunks: PromptChunk[]): PromptMessage[] => {
   const context = chunks.map((chunk) => `[${chunk.id}]\n${chunk.text}`).join('\n\n');
   return [
     {
@@ -27,4 +27,4 @@ export function buildMessages(question: string, chunks: PromptChunk[]): PromptMe
     },
     { role: 'user', content: question },
   ];
-}
+};

@@ -8,7 +8,7 @@ export class MissingApiKeyError extends Error {
 
 export type Embedder = (inputs: string[]) => Promise<number[][]>;
 
-export function toVectorLiteral(values: number[]): string {
+export const toVectorLiteral = (values: number[]): string => {
   if (values.length !== EMBEDDING_DIMENSIONS) {
     throw new Error(`Expected ${EMBEDDING_DIMENSIONS} dimensions, received ${values.length}.`);
   }
@@ -16,4 +16,4 @@ export function toVectorLiteral(values: number[]): string {
     throw new Error('Embedding values must be finite numbers.');
   }
   return `[${values.join(',')}]`;
-}
+};

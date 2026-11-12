@@ -1,8 +1,10 @@
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Trim } from '../../helper/trim.helper.js';
 
 export class CreateDocumentDto {
+  @Trim()
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Title is required.' })
   @MaxLength(200)
   title: string;
 

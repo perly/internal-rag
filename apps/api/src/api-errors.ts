@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { MulterError } from 'multer';
-import { MissingApiKeyError } from './ingestion/embedder.js';
+import { MissingApiKeyError } from './helper/embedder.helper.js';
 
 @Catch(MissingApiKeyError)
 export class MissingApiKeyFilter implements ExceptionFilter {

@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Document } from '@prisma/client';
 import { IngestionService } from '../ingestion/ingestion.service.js';
-import { contentHash } from '../ingestion/index-document.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { contentHash } from '../helper/index-document.helper.js';
+import { DocumentRepo } from '../repo/document.repo.js';
 
 export interface SaveDocumentInput {
   title: string;
@@ -25,79 +25,59 @@ export interface DocumentView extends DocumentSummary {
 @Injectable()
 export class DocumentsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly ingestion: IngestionService,
+    private readonly documentRepo: DocumentRepo,
+    private readonly ingestionService: IngestionService,
   ) {}
 
-  async list(): Promise<DocumentSummary[]> {
-    return this.prisma.document.findMany({
-      select: { id: true, title: true, status: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    });
+  list(): Promise<DocumentSummary[]> {
+    return this.documentRepo.list();
   }
 
   async get(id: string): Promise<DocumentView> {
-    const document = await this.prisma.document.findUnique({
-      where: { id },
-      select: { id: true, title: true, body: true, sourceUrl: true, status: true, updatedAt: true },
-    });
+    const document = await this.documentRepo.find(id);
     if (!document) throw new NotFoundException('Document not found.');
     return document;
   }
 
   async save(input: SaveDocumentInput) {
-    const title = input.title.trim();
-    if (!title) throw new BadRequestException('Title is required.');
-
     const normalized = input.body.replace(/\s+/g, ' ').trim();
-    const document = await this.prisma.document.create({
-      data: {
-        title,
-        body: input.body,
-        sourceUrl: input.sourceUrl ?? null,
-        contentHash: contentHash(normalized),
-        status: normalized ? 'active' : 'error',
-      },
+    const document = await this.documentRepo.create({
+      title: input.title,
+      body: input.body,
+      sourceUrl: input.sourceUrl ?? null,
+      contentHash: contentHash(normalized),
+      status: normalized ? 'active' : 'error',
     });
 
     if (!normalized) {
-      return { document: await this.get(document.id), chunks: 0, embedded: 0, reused: 0 };
+      return { document, chunks: 0, embedded: 0, reused: 0 };
     }
 
     try {
-      const indexed = await this.ingestion.index(document.id);
+      const indexed = await this.ingestionService.index(document);
       return { document: await this.get(document.id), ...indexed };
     } catch (error) {
-      await this.prisma.document.update({
-        where: { id: document.id },
-        data: { status: 'error' },
-      });
+      await this.documentRepo.setStatus(document.id, 'error');
       throw error;
     }
   }
 
   async update(id: string, input: { title: string; body: string }) {
     await this.get(id);
-    const title = input.title.trim();
-    if (!title) throw new BadRequestException('Title is required.');
-
     const normalized = input.body.replace(/\s+/g, ' ').trim();
-    await this.prisma.document.update({
-      where: { id },
-      data: {
-        title,
-        body: input.body,
-        contentHash: contentHash(normalized),
-        status: normalized ? 'active' : 'error',
-      },
+    await this.documentRepo.update(id, {
+      title: input.title,
+      body: input.body,
+      contentHash: contentHash(normalized),
+      status: normalized ? 'active' : 'error',
     });
 
-    const indexed = await this.ingestion.index(id);
+    const indexed = await this.ingestionService.index({ id, body: input.body });
     return { document: await this.get(id), ...indexed };
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.prisma.document.deleteMany({ where: { id } });
+    const result = await this.documentRepo.deleteById(id);
     if (result.count === 0) throw new NotFoundException('Document not found.');
   }
 }

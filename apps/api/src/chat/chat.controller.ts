@@ -4,10 +4,10 @@ import { AskDto } from './dto/ask.dto.js';
 
 @Controller('api/chat')
 export class ChatController {
-  constructor(private readonly chat: ChatService) {}
+  constructor(private readonly chatService: ChatService) {}
 
   @Post()
   ask(@Body() dto: AskDto) {
-    return this.chat.ask(dto.question);
+    return this.chatService.ask(dto.question);
   }
 }

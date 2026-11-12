@@ -3,12 +3,12 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 @Controller('api/health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   @Get()
   async get(): Promise<{ api: 'ok'; database: 'ok' }> {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.prismaService.$queryRaw`SELECT 1`;
     } catch {
       throw new ServiceUnavailableException('Database is not reachable.');
     }

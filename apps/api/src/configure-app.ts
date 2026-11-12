@@ -4,7 +4,7 @@ import { MissingApiKeyFilter, MulterExceptionFilter } from './api-errors.js';
 
 export const MAX_CHAT_BODY_BYTES = 64 * 1024;
 
-export function configureApp(app: INestApplication): void {
+export const configureApp = (app: INestApplication): void => {
   app.enableCors({
     origin: process.env.WEB_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
@@ -27,4 +27,4 @@ export function configureApp(app: INestApplication): void {
     }),
   );
   app.useGlobalFilters(new MissingApiKeyFilter(), new MulterExceptionFilter());
-}
+};

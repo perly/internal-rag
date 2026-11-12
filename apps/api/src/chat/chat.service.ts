@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { toVectorLiteral } from '../ingestion/embedder.js';
+import { toVectorLiteral } from '../helper/embedder.helper.js';
 import { OpenAiEmbedder } from '../ingestion/openai-embedder.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { ChatMessageRepo } from '../repo/chat-message.repo.js';
+import { ChunkRepo } from '../repo/chunk.repo.js';
 import { OpenAiCompleter } from './openai-completer.js';
 import { buildMessages, NO_CONTEXT_ANSWER } from './prompt.js';
 import { retrieve } from './retrieve.js';
@@ -9,25 +10,29 @@ import { retrieve } from './retrieve.js';
 @Injectable()
 export class ChatService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly embedder: OpenAiEmbedder,
-    private readonly completer: OpenAiCompleter,
+    private readonly chunkRepo: ChunkRepo,
+    private readonly chatMessageRepo: ChatMessageRepo,
+    private readonly openAiEmbedder: OpenAiEmbedder,
+    private readonly openAiCompleter: OpenAiCompleter,
   ) {}
 
   async ask(question: string) {
-    const trimmed = question.trim();
-    const [vector] = await this.embedder.embed([trimmed]);
+    const [vector] = await this.openAiEmbedder.embed([question]);
     if (!vector) throw new Error('Embedder returned no vector for the question.');
 
-    const hits = await retrieve(this.prisma, trimmed, toVectorLiteral(vector));
+    const vectorLiteral = toVectorLiteral(vector);
+    const hits = retrieve(
+      await this.chunkRepo.searchByVector(vectorLiteral),
+      await this.chunkRepo.searchByKeyword(question, vectorLiteral),
+    );
     if (hits.length === 0) {
-      await this.save(trimmed, NO_CONTEXT_ANSWER, [], false);
+      await this.save(question, NO_CONTEXT_ANSWER, [], false);
       return { answer: NO_CONTEXT_ANSWER, usedModel: false, citations: [] };
     }
 
-    const answer = await this.completer.complete(buildMessages(trimmed, hits));
+    const answer = await this.openAiCompleter.complete(buildMessages(question, hits));
     await this.save(
-      trimmed,
+      question,
       answer,
       hits.map((hit) => hit.id),
       true,
@@ -47,8 +52,6 @@ export class ChatService {
   }
 
   private save(question: string, answer: string, citedChunkIds: string[], usedModel: boolean) {
-    return this.prisma.chatMessage.create({
-      data: { question, answer, citedChunkIds, usedModel },
-    });
+    return this.chatMessageRepo.create({ question, answer, citedChunkIds, usedModel });
   }
 }

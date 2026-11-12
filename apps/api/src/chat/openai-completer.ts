@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OpenAI } from 'openai';
-import { MissingApiKeyError } from '../ingestion/embedder.js';
+import { MissingApiKeyError } from '../helper/embedder.helper.js';
 import type { PromptMessage } from './prompt.js';
 
 export const DEFAULT_CHAT_MODEL = 'gpt-4o-mini';

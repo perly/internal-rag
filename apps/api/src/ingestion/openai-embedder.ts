@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OpenAI } from 'openai';
-import { EMBEDDING_DIMENSIONS, MissingApiKeyError, type Embedder } from './embedder.js';
+import { EMBEDDING_DIMENSIONS, MissingApiKeyError, type Embedder } from '../helper/embedder.helper.js';
 
 export const EMBEDDING_MODEL = 'text-embedding-3-small';
 

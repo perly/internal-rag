@@ -8,7 +8,7 @@ type Health =
   | { state: 'database-down' }
   | { state: 'api-down' };
 
-export function App() {
+export const App = () => {
   const [health, setHealth] = useState<Health>({ state: 'loading' });
 
   useEffect(() => {
@@ -49,9 +49,9 @@ export function App() {
       </ul>
     </main>
   );
-}
+};
 
-function Status({ value }: { value: 'loading' | 'ok' | 'down' }) {
+const Status = ({ value }: { value: 'loading' | 'ok' | 'down' }) => {
   const label = value === 'loading' ? 'Checking' : value === 'ok' ? 'Connected' : 'Not reachable';
   return <strong className={value}>{label}</strong>;
-}
+};
