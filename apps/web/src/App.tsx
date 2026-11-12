@@ -1,57 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Chat } from './pages/Chat';
+import { Documents } from './pages/Documents';
 
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-type Health =
-  | { state: 'loading' }
-  | { state: 'ok' }
-  | { state: 'database-down' }
-  | { state: 'api-down' };
+type Screen = 'chat' | 'documents';
 
 export const App = () => {
-  const [health, setHealth] = useState<Health>({ state: 'loading' });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${apiUrl}/api/health`, { signal: controller.signal })
-      .then(async (response) => {
-        if (response.ok) {
-          setHealth({ state: 'ok' });
-          return;
-        }
-        setHealth({ state: 'database-down' });
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        setHealth({ state: 'api-down' });
-      });
-    return () => controller.abort();
-  }, []);
+  const [screen, setScreen] = useState<Screen>('chat');
 
   return (
-    <main>
-      <p className="eyebrow">Internal RAG</p>
-      <h1>Project is running</h1>
-      <p className="lede">Phase 1.1 checks that the API and Postgres can see each other.</p>
-      <ul>
-        <li>
-          <span>API</span>
-          <Status value={health.state === 'loading' ? 'loading' : health.state === 'api-down' ? 'down' : 'ok'} />
-        </li>
-        <li>
-          <span>Postgres</span>
-          <Status
-            value={
-              health.state === 'loading' ? 'loading' : health.state === 'ok' ? 'ok' : 'down'
-            }
-          />
-        </li>
-      </ul>
-    </main>
+    <>
+      <header>
+        <p className="eyebrow">Internal RAG</p>
+        <nav>
+          <button type="button" aria-current={screen === 'chat' ? 'page' : undefined} onClick={() => setScreen('chat')}>
+            Chat
+          </button>
+          <button
+            type="button"
+            aria-current={screen === 'documents' ? 'page' : undefined}
+            onClick={() => setScreen('documents')}
+          >
+            Documents
+          </button>
+        </nav>
+      </header>
+      <main>{screen === 'chat' ? <Chat /> : <Documents />}</main>
+    </>
   );
-};
-
-const Status = ({ value }: { value: 'loading' | 'ok' | 'down' }) => {
-  const label = value === 'loading' ? 'Checking' : value === 'ok' ? 'Connected' : 'Not reachable';
-  return <strong className={value}>{label}</strong>;
 };

@@ -8,10 +8,20 @@ body {
   margin: 0;
 }
 
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 0;
+}
+
 main {
-  max-width: 36rem;
-  margin: 12vh auto;
-  padding: 0 1.5rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem;
 }
 
 .eyebrow {
@@ -23,39 +33,153 @@ main {
   color: #78716c;
 }
 
-h1 {
-  margin: 0.4rem 0 0;
-  font-size: 2.4rem;
+nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+h1,
+h2 {
+  margin: 0;
   font-weight: 500;
 }
 
-.lede {
+h1 {
+  font-size: 2rem;
+}
+
+.lede,
+.meta {
   color: #44403c;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 2rem 0 0;
-  border-top: 1px solid #e7e5e4;
-}
-
-li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.9rem 0;
-  border-bottom: 1px solid #e7e5e4;
+form,
+.answer,
+.documents button,
+input,
+textarea,
+button {
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
-.ok {
+form {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #d6d3d1;
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+button {
+  font: inherit;
+  border: 0;
+  border-radius: 0.4rem;
+  background: #1c1917;
+  color: #f6f3ee;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+nav button,
+.documents button,
+.danger {
+  background: transparent;
+  color: inherit;
+}
+
+nav button[aria-current='page'] {
+  background: #1c1917;
+  color: #f6f3ee;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.manage {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.documents {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.documents button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e7e5e4;
+  border-radius: 0;
+  padding: 0.75rem 0;
+}
+
+.documents button.selected {
+  font-weight: 650;
+}
+
+.active {
   color: #3f6212;
 }
 
+.error,
 .down {
   color: #9f1239;
 }
 
-.loading {
+.deleted {
   color: #78716c;
+}
+
+.answer {
+  margin-top: 1.5rem;
+}
+
+.citations {
+  list-style: none;
+  padding: 0;
+}
+
+.citations li {
+  border-top: 1px solid #e7e5e4;
+  padding: 0.8rem 0;
+}
+
+.citations span {
+  margin-left: 0.6rem;
+  color: #78716c;
+}
+
+@media (max-width: 720px) {
+  .manage {
+    grid-template-columns: 1fr;
+  }
 }
