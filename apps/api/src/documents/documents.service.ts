@@ -15,13 +15,14 @@ export interface DocumentSummary {
   title: string;
   status: Document['status'];
   origin: Document['origin'];
+  sourceUrl: string | null;
   createdAt: Date;
+  syncedAt: Date | null;
   updatedAt: Date;
 }
 
 export interface DocumentView extends DocumentSummary {
   body: string;
-  sourceUrl: string | null;
 }
 
 @Injectable()

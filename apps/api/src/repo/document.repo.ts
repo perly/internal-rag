@@ -4,7 +4,16 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-const summarySelect = { id: true, title: true, status: true, origin: true, createdAt: true, updatedAt: true } as const;
+const summarySelect = {
+  id: true,
+  title: true,
+  status: true,
+  origin: true,
+  sourceUrl: true,
+  createdAt: true,
+  syncedAt: true,
+  updatedAt: true,
+} as const;
 const viewSelect = {
   id: true,
   title: true,
@@ -13,6 +22,7 @@ const viewSelect = {
   status: true,
   origin: true,
   createdAt: true,
+  syncedAt: true,
   updatedAt: true,
 } as const;
 
@@ -26,6 +36,7 @@ export interface DocumentWrite {
 @Injectable()
 export class DocumentRepo {
   constructor(private readonly prismaService: PrismaService) {}
+
 
   list() {
     return this.prismaService.document.findMany({
@@ -43,8 +54,12 @@ export class DocumentRepo {
     return this.prismaService.document.create({ data, select: viewSelect });
   }
 
-  update(id: string, data: DocumentWrite & { sourceUrl?: string | null }) {
+  update(id: string, data: DocumentWrite & { sourceUrl?: string | null; syncedAt?: Date }) {
     return this.prismaService.document.update({ where: { id }, data });
+  }
+
+  markSynced(id: string) {
+    return this.prismaService.document.update({ where: { id }, data: { syncedAt: new Date() } });
   }
 
   setStatus(id: string, status: Document['status'], db: Db = this.prismaService) {
@@ -53,6 +68,20 @@ export class DocumentRepo {
 
   deleteById(id: string) {
     return this.prismaService.document.deleteMany({ where: { id } });
+  }
+
+  externalIds(connectionId: string) {
+    return this.prismaService.document.findMany({
+      where: { connectionId, externalId: { not: null } },
+      select: { externalId: true },
+    });
+  }
+
+  findForRefresh(id: string) {
+    return this.prismaService.document.findUnique({
+      where: { id },
+      select: { id: true, origin: true, connectionId: true, externalId: true },
+    });
   }
 
   findByExternal(connectionId: string, externalId: string) {
@@ -64,7 +93,7 @@ export class DocumentRepo {
 
   createSynced(data: DocumentWrite & { sourceUrl: string | null; connectionId: string; externalId: string }) {
     return this.prismaService.document.create({
-      data: { ...data, origin: 'gdrive' },
+      data: { ...data, origin: 'gdrive', syncedAt: new Date() },
       select: viewSelect,
     });
   }

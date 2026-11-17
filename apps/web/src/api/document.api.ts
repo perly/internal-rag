@@ -5,7 +5,9 @@ export interface DocumentSummary {
   title: string;
   status: 'active' | 'deleted' | 'error';
   origin: 'manual' | 'gdrive';
+  sourceUrl: string | null;
   createdAt: string;
+  syncedAt: string | null;
   updatedAt: string;
 }
 
@@ -13,7 +15,13 @@ export const sourceLabel = (origin: DocumentSummary['origin']): string =>
   origin === 'gdrive' ? 'Google Drive' : 'Manual';
 
 export const addedOn = (value: string): string =>
-  new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  new Date(value).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
 export interface DocumentView extends DocumentSummary {
   body: string;
@@ -63,3 +71,9 @@ export const updateDocument = (id: string, input: { title: string; body: string 
   });
 
 export const deleteDocument = (id: string): Promise<void> => request(`/api/documents/${id}`, { method: 'DELETE' });
+
+export const refreshDocument = (id: string): Promise<DocumentView> =>
+  request(`/api/documents/${id}/refresh`, { method: 'POST' });
+
+export const shownDate = (document: Pick<DocumentSummary, 'origin' | 'createdAt' | 'syncedAt'>): string =>
+  document.origin === 'gdrive' && document.syncedAt ? document.syncedAt : document.createdAt;

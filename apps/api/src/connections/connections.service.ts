@@ -1,13 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { decryptSecret, encryptSecret, readState, signState } from '../helper/secret.helper.js';
 import { ConnectionRepo } from '../repo/connection.repo.js';
-import {
-  type DriveCredentials,
-  exchangeGoogleCode,
-  googleAccessToken,
-  googleAuthUrl,
-  listDriveFolders,
-} from './gdrive.client.js';
+import { type DriveCredentials, exchangeGoogleCode, googleAccessToken, googleAuthUrl } from './gdrive.client.js';
 
 @Injectable()
 export class ConnectionsService {
@@ -38,18 +32,7 @@ export class ConnectionsService {
     });
   }
 
-  async folders(id: string) {
-    const { token } = await this.token(id);
-    return listDriveFolders(token);
-  }
-
-  async chooseFolder(id: string, folderId: string) {
-    const connection = await this.connectionRepo.find(id);
-    if (!connection) throw new NotFoundException('Connection not found.');
-    return this.connectionRepo.setFolder(id, folderId.trim());
-  }
-
-  async token(id: string): Promise<{ token: string; folderId: string | null; cursor: string | null }> {
+  async token(id: string): Promise<string> {
     const connection = await this.connectionRepo.find(id);
     if (!connection) throw new NotFoundException('Connection not found.');
     const stored = JSON.parse(decryptSecret(connection.credentials)) as DriveCredentials;
@@ -57,6 +40,6 @@ export class ConnectionsService {
     if (access.credentials.accessToken !== stored.accessToken) {
       await this.connectionRepo.saveCredentials(id, encryptSecret(JSON.stringify(access.credentials)));
     }
-    return { token: access.token, folderId: connection.folderId, cursor: connection.cursor };
+    return access.token;
   }
 }

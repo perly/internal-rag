@@ -14,26 +14,15 @@ export interface DriveCredentials {
   accessTokenExpiresAt: number;
 }
 
-export interface DriveChange {
+export interface DriveFileText {
   externalId: string;
-  removed: boolean;
-  inFolder: boolean;
-  name: string;
   mimeType: string;
-  webViewLink: string | null;
-  modifiedTime: string | null;
-}
-
-export interface DriveFolder {
-  id: string;
-  name: string;
 }
 
 interface DriveFile {
   id: string;
   name?: string;
   mimeType?: string;
-  parents?: string[];
   trashed?: boolean;
   webViewLink?: string;
   modifiedTime?: string;
@@ -124,95 +113,71 @@ const driveGet = async (token: string, path: string): Promise<Response> => {
   return response;
 };
 
-export const listDriveFolders = async (token: string): Promise<DriveFolder[]> => {
-  const query = encodeURIComponent("mimeType = 'application/vnd.google-apps.folder' and trashed = false");
-  const response = await driveGet(token, `/files?q=${query}&pageSize=100&fields=files(id,name)`);
-  const body = (await response.json()) as { files?: DriveFolder[] };
-  return body.files ?? [];
-};
+const READABLE = [
+  "mimeType = 'application/vnd.google-apps.document'",
+  "mimeType = 'application/pdf'",
+  "mimeType = 'text/plain'",
+  "mimeType = 'text/markdown'",
+].join(' or ');
 
-const fileChange = (file: DriveFile, folderId: string): DriveChange => ({
-  externalId: file.id,
-  removed: Boolean(file.trashed),
-  inFolder: file.parents?.includes(folderId) ?? false,
-  name: file.name ?? 'Untitled',
-  mimeType: file.mimeType ?? '',
-  webViewLink: file.webViewLink ?? null,
-  modifiedTime: file.modifiedTime ?? null,
-});
+export interface DriveFileChoice {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string | null;
+}
 
-export const listFolderChanges = async (token: string, folderId: string): Promise<DriveChange[]> => {
-  const items: DriveChange[] = [];
+export const listSelectableDriveFiles = async (token: string): Promise<DriveFileChoice[]> => {
+  const items: DriveFileChoice[] = [];
   let pageToken = '';
-  const query = encodeURIComponent(`'${folderId.replaceAll("'", "\\'")}' in parents and trashed = false`);
+  const query = encodeURIComponent(`trashed = false and (${READABLE})`);
   do {
     const paging = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
     const response = await driveGet(
       token,
-      `/files?q=${query}&pageSize=100&fields=nextPageToken,files(id,name,mimeType,parents,trashed,webViewLink,modifiedTime)${paging}`,
+      `/files?q=${query}&pageSize=100&orderBy=name&fields=nextPageToken,files(id,name,mimeType,webViewLink)${paging}`,
     );
     const body = (await response.json()) as { nextPageToken?: string; files?: DriveFile[] };
-    items.push(...(body.files ?? []).map((file) => fileChange(file, folderId)));
+    items.push(
+      ...(body.files ?? []).map((file) => ({
+        id: file.id,
+        name: file.name ?? 'Untitled',
+        mimeType: file.mimeType ?? '',
+        webViewLink: file.webViewLink ?? null,
+      })),
+    );
     pageToken = body.nextPageToken ?? '';
-  } while (pageToken);
+  } while (pageToken && items.length < 500);
   return items;
 };
 
-export const driveStartToken = async (token: string): Promise<string> => {
-  const response = await driveGet(token, '/changes/startPageToken');
-  const body = (await response.json()) as { startPageToken: string };
-  return body.startPageToken;
+export const getDriveFile = async (token: string, fileId: string): Promise<DriveFileChoice & { modifiedTime: string | null }> => {
+  const response = await driveGet(
+    token,
+    `/files/${encodeURIComponent(fileId)}?fields=id,name,mimeType,webViewLink,trashed,modifiedTime`,
+  );
+  const file = (await response.json()) as DriveFile;
+  if (file.trashed) throw new Error('That Google file is in the trash.');
+  return {
+    id: file.id,
+    name: file.name ?? 'Untitled',
+    mimeType: file.mimeType ?? '',
+    webViewLink: file.webViewLink ?? null,
+    modifiedTime: file.modifiedTime ?? null,
+  };
 };
 
-export const listDriveChanges = async (token: string, folderId: string, cursor: string): Promise<{
-  items: DriveChange[];
-  nextCursor: string;
-}> => {
-  const items: DriveChange[] = [];
-  let pageToken = cursor;
-  let nextCursor = cursor;
-  do {
-    const response = await driveGet(
-      token,
-      `/changes?pageToken=${encodeURIComponent(pageToken)}&pageSize=100&fields=nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,parents,trashed,webViewLink,modifiedTime))`,
-    );
-    const body = (await response.json()) as {
-      nextPageToken?: string;
-      newStartPageToken?: string;
-      changes?: Array<{ fileId: string; removed?: boolean; file?: DriveFile }>;
-    };
-    for (const change of body.changes ?? []) {
-      if (change.removed || !change.file) {
-        items.push({
-          externalId: change.fileId,
-          removed: true,
-          inFolder: false,
-          name: '',
-          mimeType: '',
-          webViewLink: null,
-          modifiedTime: null,
-        });
-        continue;
-      }
-      items.push(fileChange({ ...change.file, id: change.file.id || change.fileId }, folderId));
-    }
-    if (body.newStartPageToken) nextCursor = body.newStartPageToken;
-    pageToken = body.nextPageToken ?? '';
-  } while (pageToken);
-  return { items, nextCursor };
-};
-
-export const driveFileText = async (token: string, change: DriveChange): Promise<string | null> => {
-  if (change.mimeType === DOC) {
-    const response = await driveGet(token, `/files/${change.externalId}/export?mimeType=text/plain`);
+export const driveFileText = async (token: string, file: DriveFileText): Promise<string | null> => {
+  if (file.mimeType === DOC) {
+    const response = await driveGet(token, `/files/${file.externalId}/export?mimeType=text/plain`);
     return textFromBytes(Buffer.from(await response.arrayBuffer()));
   }
-  if (change.mimeType === PDF) {
-    const response = await driveGet(token, `/files/${change.externalId}?alt=media`);
+  if (file.mimeType === PDF) {
+    const response = await driveGet(token, `/files/${file.externalId}?alt=media`);
     return textFromPdf(await limitedBytes(response));
   }
-  if (!TEXT.has(change.mimeType)) return null;
-  const response = await driveGet(token, `/files/${change.externalId}?alt=media`);
+  if (!TEXT.has(file.mimeType)) return null;
+  const response = await driveGet(token, `/files/${file.externalId}?alt=media`);
   return textFromBytes(await limitedBytes(response));
 };
 

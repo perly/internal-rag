@@ -49,6 +49,17 @@ h1 {
   font-size: 2rem;
 }
 
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.title-with-icon .drive-icon {
+  width: 1.35rem;
+  height: 1.2rem;
+}
+
 .lede,
 .meta {
   color: #44403c;
@@ -168,11 +179,106 @@ nav a.page {
 
 .document-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: center;
   border-bottom: 1px solid #e7e5e4;
   padding: 0.75rem 0;
+}
+
+.doc-title,
+.picker-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.doc-title a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-icon {
+  width: 1.35rem;
+  height: 1.2rem;
+  flex: none;
+}
+
+a.drive-link {
+  display: inline-flex;
+  line-height: 0;
+  color: inherit;
+}
+
+.refresh-icon,
+.delete-icon,
+.edit-icon,
+.back-icon,
+.plus-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+}
+
+.back-button {
+  margin-bottom: 0.75rem;
+}
+
+.source-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border: 1px solid #d6d3d1;
+  border-radius: 0.4rem;
+  text-decoration: none;
+}
+
+.picker-actions {
+  justify-content: flex-start;
+  margin: 1rem 0;
+}
+
+.spinner-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid #d6d3d1;
+  border-top-color: #1c1917;
+  border-radius: 50%;
+  flex: none;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.picker-row {
+  grid-template-columns: 1fr;
+}
+
+.picker-row label {
+  font-size: 1rem;
 }
 
 .document-row a {
@@ -233,6 +339,16 @@ nav a.page {
   padding: 0.35rem 0.2rem;
 }
 
+.document-row .icon-button {
+  border: 1px solid #d6d3d1;
+  padding: 0;
+}
+
+.document-row .icon-button.danger {
+  border: 0;
+  color: #9f1239;
+}
+
 .active {
   color: #3f6212;
 }
@@ -271,6 +387,6 @@ nav a.page {
   }
 
   .document-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }

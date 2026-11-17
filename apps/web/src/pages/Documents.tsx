@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { addedOn, deleteDocument, listDocuments, sourceLabel, type DocumentSummary } from '../api/document.api';
+import { deleteDocument, listDocuments, type DocumentSummary } from '../api/document.api';
+import { DeleteIcon, DriveIcon, PlusIcon } from './icons';
 
 export const Documents = () => {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
@@ -31,34 +32,34 @@ export const Documents = () => {
     <section>
       <div className="row">
         <h1>Documents</h1>
-        <Link className="button" to="/documents/new">
-          New
+        <Link className="icon-button" aria-label="New" to="/documents/new">
+          <PlusIcon />
         </Link>
       </div>
       {documents.length === 0 ? <p className="lede">No documents yet.</p> : null}
-      <DocumentRows documents={documents.filter((document) => document.status !== 'deleted')} onDelete={remove} />
+      <DocumentRows
+        documents={documents.filter((document) => document.status !== 'deleted')}
+        onDelete={remove}
+      />
       {error ? <p className="error">{error}</p> : null}
     </section>
   );
 };
 
-const DocumentRows = ({
-  documents,
-  onDelete,
-}: {
-  documents: DocumentSummary[];
-  onDelete: (id: string) => void;
-}) => (
+const DocumentRows = ({ documents, onDelete }: { documents: DocumentSummary[]; onDelete: (id: string) => void }) => (
   <ul className="documents">
     {documents.map((document) => (
       <li key={document.id} className="document-row">
-        <Link to={`/documents/${document.id}`}>{document.title}</Link>
-        <span className="meta">{sourceLabel(document.origin)}</span>
-        <time className="meta" dateTime={document.createdAt}>
-          {addedOn(document.createdAt)}
-        </time>
-        <button type="button" className="danger" onClick={() => onDelete(document.id)}>
-          Delete
+        <span className="doc-title">
+          {document.origin === 'gdrive' && document.sourceUrl ? (
+            <a className="drive-link" href={document.sourceUrl} target="_blank" rel="noreferrer" aria-label="Open in Google Drive">
+              <DriveIcon label={false} />
+            </a>
+          ) : null}
+          <Link to={`/documents/${document.id}`}>{document.title}</Link>
+        </span>
+        <button type="button" className="icon-button danger" aria-label="Delete" onClick={() => onDelete(document.id)}>
+          <DeleteIcon />
         </button>
       </li>
     ))}

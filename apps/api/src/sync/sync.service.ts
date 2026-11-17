@@ -1,155 +1,94 @@
-import { BadRequestException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { driveFileText, getDriveFile, listSelectableDriveFiles } from '../connections/gdrive.client.js';
+import { ConnectionsService } from '../connections/connections.service.js';
 import { contentHash } from '../helper/index-document.helper.js';
 import { IngestionService } from '../ingestion/ingestion.service.js';
 import { ChunkRepo } from '../repo/chunk.repo.js';
-import { ConnectionRepo } from '../repo/connection.repo.js';
 import { DocumentRepo } from '../repo/document.repo.js';
-import { SyncRunRepo } from '../repo/sync-run.repo.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { ConnectionsService } from '../connections/connections.service.js';
-import {
-  type DriveChange,
-  driveFileText,
-  driveStartToken,
-  listDriveChanges,
-  listFolderChanges,
-} from '../connections/gdrive.client.js';
 
-const STALE_MS = 15 * 60 * 1000;
+interface DriveFileSave {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string | null;
+}
 
 @Injectable()
-export class SyncService implements OnModuleInit, OnModuleDestroy {
-  private timer: NodeJS.Timeout | undefined;
-
+export class SyncService {
   constructor(
-    private readonly prismaService: PrismaService,
-    private readonly connectionRepo: ConnectionRepo,
-    private readonly syncRunRepo: SyncRunRepo,
     private readonly documentRepo: DocumentRepo,
     private readonly chunkRepo: ChunkRepo,
     private readonly ingestionService: IngestionService,
     private readonly connectionsService: ConnectionsService,
   ) {}
 
-  onModuleInit(): void {
-    const interval = Number(process.env.SYNC_INTERVAL_MS ?? 300_000);
-    if (!Number.isFinite(interval) || interval < 1) return;
-    this.timer = setInterval(() => {
-      void this.syncAll();
-    }, interval);
+  async availableFiles(connectionId: string) {
+    const token = await this.connectionsService.token(connectionId);
+    const files = await listSelectableDriveFiles(token);
+    const stored = new Set((await this.documentRepo.externalIds(connectionId)).map((row) => row.externalId));
+    return files.filter((file) => !stored.has(file.id));
   }
 
-  onModuleDestroy(): void {
-    if (this.timer) clearInterval(this.timer);
+  async importFiles(connectionId: string, fileIds: string[]) {
+    const token = await this.connectionsService.token(connectionId);
+    const stored = new Set((await this.documentRepo.externalIds(connectionId)).map((row) => row.externalId));
+    let imported = 0;
+    for (const fileId of fileIds) {
+      if (stored.has(fileId)) continue;
+      const file = await getDriveFile(token, fileId);
+      await this.saveFile(connectionId, token, file);
+      imported += 1;
+    }
+    return { imported };
   }
 
-  async syncAll(): Promise<void> {
-    const connections = await this.connectionRepo.idsToSync();
-    for (const connection of connections) {
-      await this.sync(connection.id).catch(() => undefined);
+  async refreshDocument(id: string) {
+    const document = await this.documentRepo.findForRefresh(id);
+    if (!document || document.origin !== 'gdrive' || !document.connectionId || !document.externalId) {
+      throw new BadRequestException('This document is not from Google Drive.');
     }
+    const token = await this.connectionsService.token(document.connectionId);
+    const file = await getDriveFile(token, document.externalId);
+    await this.saveFile(document.connectionId, token, file);
+    const view = await this.documentRepo.find(id);
+    if (!view) throw new BadRequestException('This document is not from Google Drive.');
+    return view;
   }
 
-  async sync(connectionId: string) {
-    const runId = await this.claim(connectionId);
-    if (!runId) return { skipped: true };
-    try {
-      const result = await this.apply(connectionId);
-      await this.syncRunRepo.finish(runId, {
-        status: 'success',
-        finishedAt: new Date(),
-        createdCount: result.created,
-        updatedCount: result.updated,
-        deletedCount: result.deleted,
-      });
-      await this.connectionRepo.finishSync(connectionId, {
-        cursor: result.cursor,
-        lastSyncAt: new Date(),
-        status: 'active',
-      });
-      return { skipped: false, created: result.created, updated: result.updated, deleted: result.deleted };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sync failed.';
-      await this.syncRunRepo.finish(runId, { status: 'error', finishedAt: new Date(), error: message });
-      await this.connectionRepo.finishSync(connectionId, { status: 'error' });
-      throw error;
-    }
-  }
-
-  private claim = async (connectionId: string): Promise<string | null> => {
-    return this.prismaService.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT id FROM connections WHERE id = ${connectionId} FOR UPDATE`;
-      const running = await this.syncRunRepo.findRunning(connectionId, tx);
-      if (running && Date.now() - running.startedAt.getTime() < STALE_MS) return null;
-      if (running) await this.syncRunRepo.fail(running.id, 'Sync did not finish.', tx);
-      const run = await this.syncRunRepo.start(connectionId, tx);
-      return run.id;
-    });
-  };
-
-  private apply = async (connectionId: string) => {
-    const access = await this.connectionsService.token(connectionId);
-    if (!access.folderId) throw new BadRequestException('Choose a Google Drive folder.');
-    const page = await this.changes(access.token, access.folderId, access.cursor);
-    const counts = { created: 0, updated: 0, deleted: 0 };
-    for (const change of page.items) {
-      const outcome = await this.applyChange(connectionId, access.token, change);
-      if (outcome === 'created') counts.created += 1;
-      if (outcome === 'updated') counts.updated += 1;
-      if (outcome === 'deleted') counts.deleted += 1;
-    }
-    return { ...counts, cursor: page.nextCursor };
-  };
-
-  private changes = async (token: string, folderId: string, cursor: string | null) => {
-    if (cursor) return listDriveChanges(token, folderId, cursor);
-    const nextCursor = await driveStartToken(token);
-    const items = await listFolderChanges(token, folderId);
-    return { items, nextCursor };
-  };
-
-  private applyChange = async (
-    connectionId: string,
-    token: string,
-    change: DriveChange,
-  ): Promise<'created' | 'updated' | 'deleted' | 'unchanged'> => {
-    const existing = await this.documentRepo.findByExternal(connectionId, change.externalId);
-    if (change.removed || !change.inFolder) {
-      if (!existing || existing.status === 'deleted') return 'unchanged';
-      await this.chunkRepo.deleteByDocument(existing.id);
-      await this.documentRepo.setStatus(existing.id, 'deleted');
-      return 'deleted';
-    }
-
-    const text = await driveFileText(token, change);
-    if (text === null) return 'unchanged';
+  private saveFile = async (connectionId: string, token: string, file: DriveFileSave) => {
+    const text = await driveFileText(token, { externalId: file.id, mimeType: file.mimeType });
+    if (text === null) return;
     const normalized = text.replace(/\s+/g, ' ').trim();
     const hash = contentHash(normalized);
-    if (existing && existing.contentHash === hash && existing.status === 'active') return 'unchanged';
+    const existing = await this.documentRepo.findByExternal(connectionId, file.id);
+    if (existing && existing.contentHash === hash && existing.status === 'active') {
+      await this.documentRepo.markSynced(existing.id);
+      return;
+    }
 
     if (!existing) {
       const document = await this.documentRepo.createSynced({
-        title: change.name,
+        title: file.name,
         body: text,
-        sourceUrl: change.webViewLink,
+        sourceUrl: file.webViewLink,
         contentHash: hash,
         status: normalized ? 'active' : 'error',
         connectionId,
-        externalId: change.externalId,
+        externalId: file.id,
       });
       if (normalized) await this.ingestionService.index(document);
-      return 'created';
+      return;
     }
 
     await this.documentRepo.update(existing.id, {
-      title: change.name,
+      title: file.name,
       body: text,
-      sourceUrl: change.webViewLink,
+      sourceUrl: file.webViewLink,
       contentHash: hash,
       status: normalized ? 'active' : 'error',
+      syncedAt: new Date(),
     });
     if (normalized) await this.ingestionService.index({ id: existing.id, body: text });
     else await this.chunkRepo.deleteByDocument(existing.id);
-    return 'updated';
   };
 }

@@ -20,7 +20,7 @@ The full roadmap is in [PLAN.md](PLAN.md).
 | 1.2 | Documents, chunks, and pgvector embeddings | Done |
 | 1.3 | Document create, edit, delete, and `POST /api/chat` | Done |
 | 1.4 | Home, routed pages, and document view and edit | Done |
-| 1.6 | Google Drive document picker, refresh, and last sync date | Not yet |
+| 1.6 | Google Drive document picker, refresh, and last sync date | Done |
 | 2 | Notion and Confluence in the same ingest path | Not yet |
 | 3 | Docker Compose runs Postgres, the API, and the React app | Not yet |
 | 4 | Users, roles, collections, login, and sessions | Not yet |
@@ -37,7 +37,7 @@ Documents can be typed in or uploaded as `.md`, `.txt`, or `.pdf`. Text is split
 
 Chat embeds the question, takes the top 20 vector hits and the top 20 full-text hits, and merges them with reciprocal rank fusion. A vector hit must reach cosine similarity `0.35`. If the merge is empty, the answer is `I don't know based on the provided documents.` Otherwise the model answers at temperature 0 and cites chunk ids.
 
-Google Drive connects with a read-only OAuth scope, one chosen folder, and an encrypted refresh token. Sync runs on an interval and from **Sync now**. A remote delete removes that file from chat. The sync cursor moves only after a successful run.
+Google Drive connects with a read-only OAuth scope and an encrypted refresh token. **New → Google Drive** lists documents that are not already stored, and the selected files are imported. A Google document shows its last sync date and a refresh action that fetches that file again.
 
 ## Run locally
 

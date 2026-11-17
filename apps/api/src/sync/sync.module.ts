@@ -9,5 +9,6 @@ import { SyncService } from './sync.service.js';
   imports: [RepoModule, IngestionModule, ConnectionsModule],
   controllers: [SyncController],
   providers: [SyncService],
+  exports: [SyncService],
 })
 export class SyncModule {}

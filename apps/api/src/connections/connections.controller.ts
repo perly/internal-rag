@@ -1,14 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { ConnectionsService } from './connections.service.js';
-
-class ChooseFolderDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  folderId: string;
-}
 
 @Controller('api/connections')
 export class ConnectionsController {
@@ -42,15 +34,5 @@ export class ConnectionsController {
     } catch {
       response.redirect(`${origin}/documents/new/connect?drive=error`);
     }
-  }
-
-  @Get(':id/folders')
-  folders(@Param('id') id: string) {
-    return this.connectionsService.folders(id);
-  }
-
-  @Post(':id/folder')
-  chooseFolder(@Param('id') id: string, @Body() dto: ChooseFolderDto) {
-    return this.connectionsService.chooseFolder(id, dto.folderId);
   }
 }

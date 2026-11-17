@@ -1,6 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { Chat } from './pages/Chat';
-import { Connections } from './pages/Connections';
+import { GooglePicker } from './pages/GooglePicker';
 import { DocumentForm } from './pages/DocumentForm';
 import { DocumentView } from './pages/DocumentView';
 import { Documents } from './pages/Documents';
@@ -35,7 +35,7 @@ export const App = () => (
         <Route path="/documents/new" element={<NewDocument />} />
         <Route path="/documents/new/text" element={<DocumentForm mode="text" />} />
         <Route path="/documents/new/upload" element={<DocumentForm mode="upload" />} />
-        <Route path="/documents/new/connect" element={<Connections />} />
+        <Route path="/documents/new/connect" element={<GooglePicker />} />
         <Route path="/documents/:id" element={<DocumentView />} />
         <Route path="/documents/:id/edit" element={<DocumentForm mode="edit" />} />
       </Routes>

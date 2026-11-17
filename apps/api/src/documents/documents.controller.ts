@@ -14,12 +14,16 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateDocumentDto } from './dto/create-document.dto.js';
 import { UpdateDocumentDto } from './dto/update-document.dto.js';
+import { SyncService } from '../sync/sync.service.js';
 import { DocumentsService } from './documents.service.js';
 import { MAX_UPLOAD_BYTES, textFromUpload } from '../helper/extract-text.helper.js';
 
 @Controller('api/documents')
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly syncService: SyncService,
+  ) {}
 
   @Get()
   list() {
@@ -40,6 +44,12 @@ export class DocumentsController {
       throw new BadRequestException('Provide document text or a .md, .txt, or .pdf file.');
     }
     return this.documentsService.save({ title: dto.title, body, sourceUrl: dto.sourceUrl });
+  }
+
+  @Post(':id/refresh')
+  @HttpCode(200)
+  refresh(@Param('id') id: string) {
+    return this.syncService.refreshDocument(id);
   }
 
   @Patch(':id')

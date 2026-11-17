@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DriveIcon } from './icons';
 
 export const NewDocument = () => (
   <section>
@@ -15,7 +16,9 @@ export const NewDocument = () => (
       </Link>
       <Link to="/documents/new/connect">
         <strong>Connect</strong>
-        <span>Google Drive</span>
+        <span>
+          <DriveIcon />
+        </span>
       </Link>
     </div>
   </section>

@@ -12,7 +12,7 @@ Work follows the five phases below. Each phase is usable before the next one sta
 | 1.2 | Documents and chunks in Postgres with pgvector embeddings | Done |
 | 1.3 | Document create, edit, delete, and `POST /api/chat` | Done |
 | 1.4 | Home, routed pages, and document view and edit | Done |
-| 1.6 | Google Drive document picker, refresh, and last sync date | Not yet |
+| 1.6 | Google Drive document picker, refresh, and last sync date | Done |
 | 2 | Sync Google Drive, Notion, and Confluence into the same ingest pipeline | Not yet |
 | 3 | Docker Compose runs Postgres, the Nest API, and the React app | Not yet |
 | 4.1 | Users, roles, collections, and documents stored per role | Not yet |
@@ -135,7 +135,7 @@ Documents:
 - `POST /api/documents` creates from typed text or an uploaded `.md`, `.txt`, or `.pdf`. Both are `origin` `manual`.
 - `PATCH /api/documents/:id` edits title and text, then re-indexes. A document that belongs to a connection, including Google Drive, cannot be edited.
 - `DELETE /api/documents/:id` removes the document and its chunks. This is allowed for manual, uploaded, and synced documents.
-- `GET /api/documents` and `GET /api/documents/:id` list and read. Responses include `origin` and `createdAt`. Phase 1.5 adds `errorMessage`. Phase 1.6 adds `syncedAt`.
+- `GET /api/documents` and `GET /api/documents/:id` list and read. Responses include `origin`, `createdAt`, and `syncedAt`. Phase 1.5 adds `errorMessage`.
 
 Chat:
 

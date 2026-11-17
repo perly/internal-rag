@@ -4,22 +4,14 @@ export interface ConnectionSummary {
   id: string;
   provider: 'gdrive';
   displayName: string;
-  folderId: string | null;
-  lastSyncAt: string | null;
   status: 'active' | 'error';
-  syncRuns: Array<{
-    status: 'running' | 'success' | 'error';
-    finishedAt: string | null;
-    createdCount: number;
-    updatedCount: number;
-    deletedCount: number;
-    error: string | null;
-  }>;
 }
 
-export interface DriveFolder {
+export interface DriveFileChoice {
   id: string;
   name: string;
+  mimeType: string;
+  webViewLink: string | null;
 }
 
 export const listConnections = (): Promise<ConnectionSummary[]> => request('/api/connections');
@@ -27,19 +19,14 @@ export const listConnections = (): Promise<ConnectionSummary[]> => request('/api
 export const googleDriveUrl = (displayName: string): Promise<{ url: string }> =>
   request(`/api/connections/gdrive/start?displayName=${encodeURIComponent(displayName)}`);
 
-export const listFolders = (id: string): Promise<DriveFolder[]> => request(`/api/connections/${id}/folders`);
+export const listDriveFiles = (id: string): Promise<DriveFileChoice[]> => request(`/api/connections/${id}/files`);
 
-export const chooseFolder = (id: string, folderId: string): Promise<ConnectionSummary> =>
-  request(`/api/connections/${id}/folder`, {
+export const importDriveFiles = (id: string, fileIds: string[]): Promise<{ imported: number }> =>
+  request(`/api/connections/${id}/import`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ folderId }),
+    body: JSON.stringify({ fileIds }),
   });
-
-export const syncConnection = (
-  id: string,
-): Promise<{ skipped: boolean; created?: number; updated?: number; deleted?: number }> =>
-  request(`/api/connections/${id}/sync`, { method: 'POST' });
 
 export const openGoogleDrive = async (displayName: string): Promise<void> => {
   const started = await googleDriveUrl(displayName);
