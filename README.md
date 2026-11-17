@@ -2,6 +2,8 @@
 
 A NestJS, Postgres, and React app that answers questions from one company's documents. It stores document text as embeddings, retrieves the closest passages, and answers only from those passages. When nothing is close enough, it says it does not know and does not call the chat model.
 
+The full roadmap is in [PLAN.md](PLAN.md).
+
 ## Stack
 
 - Node.js and TypeScript
@@ -17,13 +19,14 @@ A NestJS, Postgres, and React app that answers questions from one company's docu
 | 1.1 | API, React app, Postgres connection, env example | Done |
 | 1.2 | Documents, chunks, and pgvector embeddings | Done |
 | 1.3 | Document create, edit, delete, and `POST /api/chat` | Done |
-| 1.4 | Chat screen and document screen | Done |
-| 2 | Sync external sources into the same ingest path | Google Drive only |
+| 1.4 | Home, routed pages, document view and edit, and stored document errors | Not yet |
+| 1.5 | Google Drive document picker, refresh, and last sync date | Not yet |
+| 2 | Notion and Confluence in the same ingest path | Not yet |
 | 3 | Docker Compose runs Postgres, the API, and the React app | Not yet |
 | 4 | Users, roles, collections, login, and sessions | Not yet |
 | 5 | Jest tests for ingest, chat refusal, sync, and role filters | Not yet |
 
-Phase 2 still needs Notion and Confluence. `docker-compose.yml` currently starts Postgres only. There is no login: every document is visible to chat.
+`docker-compose.yml` currently starts Postgres only. There is no login: every document is visible to chat.
 
 Out of this version: a cross-encoder reranker, SSO, multi-company tenants, webhooks, Slack, and email.
 
