@@ -1,30 +1,44 @@
-import { useState } from 'react';
+import { NavLink, Route, Routes } from 'react-router-dom';
 import { Chat } from './pages/Chat';
+import { Connections } from './pages/Connections';
+import { DocumentForm } from './pages/DocumentForm';
+import { DocumentView } from './pages/DocumentView';
 import { Documents } from './pages/Documents';
+import { Home } from './pages/Home';
+import { NewDocument } from './pages/NewDocument';
 
-type Screen = 'chat' | 'documents';
+const page = ({ isActive }: { isActive: boolean }): string => (isActive ? 'page' : '');
 
-export const App = () => {
-  const [screen, setScreen] = useState<Screen>('chat');
-
-  return (
-    <>
-      <header>
-        <p className="eyebrow">Internal RAG</p>
-        <nav>
-          <button type="button" aria-current={screen === 'chat' ? 'page' : undefined} onClick={() => setScreen('chat')}>
-            Chat
-          </button>
-          <button
-            type="button"
-            aria-current={screen === 'documents' ? 'page' : undefined}
-            onClick={() => setScreen('documents')}
-          >
-            Documents
-          </button>
-        </nav>
-      </header>
-      <main>{screen === 'chat' ? <Chat /> : <Documents />}</main>
-    </>
-  );
-};
+export const App = () => (
+  <>
+    <header>
+      <NavLink className="eyebrow" to="/">
+        Internal RAG
+      </NavLink>
+      <nav>
+        <NavLink to="/" end className={page}>
+          Home
+        </NavLink>
+        <NavLink to="/chat" className={page}>
+          Chat
+        </NavLink>
+        <NavLink to="/documents" className={page}>
+          Documents
+        </NavLink>
+      </nav>
+    </header>
+    <main>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/documents/new" element={<NewDocument />} />
+        <Route path="/documents/new/text" element={<DocumentForm mode="text" />} />
+        <Route path="/documents/new/upload" element={<DocumentForm mode="upload" />} />
+        <Route path="/documents/new/connect" element={<Connections />} />
+        <Route path="/documents/:id" element={<DocumentView />} />
+        <Route path="/documents/:id/edit" element={<DocumentForm mode="edit" />} />
+      </Routes>
+    </main>
+  </>
+);

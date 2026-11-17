@@ -58,7 +58,11 @@ const Answer = ({ reply }: { reply: ChatReply }) => (
             <strong>{citation.documentTitle}</strong>
             <span>{citation.similarity.toFixed(2)}</span>
             <p>{citation.text}</p>
-            {citation.sourceUrl ? <a href={citation.sourceUrl}>{citation.sourceUrl}</a> : null}
+            {citation.sourceUrl ? (
+              <a href={citation.sourceUrl} target="_blank" rel="noreferrer">
+                {citation.sourceUrl}
+              </a>
+            ) : null}
           </li>
         ))}
       </ul>

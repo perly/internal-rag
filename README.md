@@ -19,12 +19,13 @@ The full roadmap is in [PLAN.md](PLAN.md).
 | 1.1 | API, React app, Postgres connection, env example | Done |
 | 1.2 | Documents, chunks, and pgvector embeddings | Done |
 | 1.3 | Document create, edit, delete, and `POST /api/chat` | Done |
-| 1.4 | Home, routed pages, document view and edit, and stored document errors | Not yet |
-| 1.5 | Google Drive document picker, refresh, and last sync date | Not yet |
+| 1.4 | Home, routed pages, and document view and edit | Done |
+| 1.6 | Google Drive document picker, refresh, and last sync date | Not yet |
 | 2 | Notion and Confluence in the same ingest path | Not yet |
 | 3 | Docker Compose runs Postgres, the API, and the React app | Not yet |
 | 4 | Users, roles, collections, login, and sessions | Not yet |
 | 5 | Jest tests for ingest, chat refusal, sync, and role filters | Not yet |
+| 1.5 | Save the document error message and offer try again | Not yet |
 
 `docker-compose.yml` currently starts Postgres only. There is no login: every document is visible to chat.
 

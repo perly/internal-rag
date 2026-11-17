@@ -5,8 +5,15 @@ export interface DocumentSummary {
   title: string;
   status: 'active' | 'deleted' | 'error';
   origin: 'manual' | 'gdrive';
+  createdAt: string;
   updatedAt: string;
 }
+
+export const sourceLabel = (origin: DocumentSummary['origin']): string =>
+  origin === 'gdrive' ? 'Google Drive' : 'Manual';
+
+export const addedOn = (value: string): string =>
+  new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
 export interface DocumentView extends DocumentSummary {
   body: string;

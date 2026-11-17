@@ -4,8 +4,17 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-const summarySelect = { id: true, title: true, status: true, origin: true, updatedAt: true } as const;
-const viewSelect = { id: true, title: true, body: true, sourceUrl: true, status: true, updatedAt: true } as const;
+const summarySelect = { id: true, title: true, status: true, origin: true, createdAt: true, updatedAt: true } as const;
+const viewSelect = {
+  id: true,
+  title: true,
+  body: true,
+  sourceUrl: true,
+  status: true,
+  origin: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 export interface DocumentWrite {
   title: string;
@@ -20,6 +29,7 @@ export class DocumentRepo {
 
   list() {
     return this.prismaService.document.findMany({
+      where: { status: { not: 'error' } },
       select: summarySelect,
       orderBy: { updatedAt: 'desc' },
     });

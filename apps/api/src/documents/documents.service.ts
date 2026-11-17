@@ -14,6 +14,8 @@ export interface DocumentSummary {
   id: string;
   title: string;
   status: Document['status'];
+  origin: Document['origin'];
+  createdAt: Date;
   updatedAt: Date;
 }
 

@@ -11,13 +11,14 @@ Work follows the five phases below. Each phase is usable before the next one sta
 | 1.1 | NestJS API, Vite React app, Postgres connection, env example | Done |
 | 1.2 | Documents and chunks in Postgres with pgvector embeddings | Done |
 | 1.3 | Document create, edit, delete, and `POST /api/chat` | Done |
-| 1.4 | Home, routed pages, document view and edit, and stored document errors | Not yet |
-| 1.5 | Google Drive document picker, refresh, and last sync date | Not yet |
+| 1.4 | Home, routed pages, and document view and edit | Done |
+| 1.6 | Google Drive document picker, refresh, and last sync date | Not yet |
 | 2 | Sync Google Drive, Notion, and Confluence into the same ingest pipeline | Not yet |
 | 3 | Docker Compose runs Postgres, the Nest API, and the React app | Not yet |
 | 4.1 | Users, roles, collections, and documents stored per role | Not yet |
 | 4.2 | Login, sessions, and server-side authorization | Not yet |
 | 5 | Jest coverage for ingest, chat refusal, sync fixtures, and role filters | Not yet |
+| 1.5 | Save the document error message and offer try again | Not yet |
 
 ## Stack
 
@@ -114,7 +115,7 @@ flowchart LR
 
 Phase 1 tables:
 
-- **documents** — title, body text, source URL, content hash, status (`active`, `deleted`, `error`), and `errorMessage` when status is `error`. `origin` is `manual` for typed text, `upload` for a file, or `gdrive` for a synced Google file. `syncedAt` is set when a Google file is imported or refreshed.
+- **documents** — title, body text, source URL, content hash, status (`active`, `deleted`, `error`), and `errorMessage` when status is `error`. `origin` is `manual` for typed text and uploaded files, or `gdrive` for a synced Google file. `syncedAt` is set when a Google file is imported or refreshed.
 - **chunks** — document, index, text, content hash, embedding (`vector`), generated full-text column.
 - **chat_messages** — question, answer, cited chunk ids, whether the model ran.
 
@@ -131,12 +132,10 @@ Ingest:
 
 Documents:
 
-- `POST /api/documents` creates from typed text (`origin` `manual`) or an uploaded `.md`, `.txt`, or `.pdf` (`origin` `upload`).
+- `POST /api/documents` creates from typed text or an uploaded `.md`, `.txt`, or `.pdf`. Both are `origin` `manual`.
 - `PATCH /api/documents/:id` edits title and text, then re-indexes. A document that belongs to a connection, including Google Drive, cannot be edited.
 - `DELETE /api/documents/:id` removes the document and its chunks. This is allowed for manual, uploaded, and synced documents.
-- `GET /api/documents` and `GET /api/documents/:id` list and read. Responses include `origin`, `errorMessage`, `createdAt`, and `syncedAt`.
-- `POST /api/documents/:id/retry` indexes the stored text again. For a Google Drive document it fetches that file again, then indexes it, and sets `syncedAt`. Success clears `errorMessage`.
-- Empty text, a PDF that cannot be read, and an indexing failure save the document with status `error` and the message in `errorMessage`. A later successful index clears that message.
+- `GET /api/documents` and `GET /api/documents/:id` list and read. Responses include `origin` and `createdAt`. Phase 1.5 adds `errorMessage`. Phase 1.6 adds `syncedAt`.
 
 Chat:
 
@@ -166,11 +165,22 @@ React Router replaces the in-memory screen switch. Each page has its own URL.
 
 - **Home** (`/`) links to Chat and Documents.
 - **Chat** (`/chat`) keeps the question box, answer, citations, and whether the model was called.
-- **Documents** (`/documents`) lists active documents. Each row shows the title, the source (Manual or Uploaded), the created date, and a **Delete** button. Clicking the title opens the document. A second list on this page holds documents with status `error`.
-- **Document** (`/documents/:id`) shows the content and the created date. **Edit** opens the edit page. An error document shows the saved error, the stored text, and **Try again**.
+- **Documents** (`/documents`) lists documents that are not in the error state. Each row shows the title, the source (Manual or Google Drive), the created date, and a **Delete** button. Clicking the title opens the document. The error list arrives with phase 1.5.
+- **Document** (`/documents/:id`) shows the content and the created date. **Edit** opens the edit page. An error document is opened from the error list. The saved message and **Try again** arrive in phase 1.5.
 - **New** (`/documents/new`) offers three choices: type the text, upload a file, or connect an external source. Typing and uploading continue to their own forms. **Edit** (`/documents/:id/edit`) is the title and text form.
 
-### 5. Google Drive documents
+### 5. Document errors
+
+`errorMessage` is not stored yet. This task adds that column and writes it whenever status becomes `error`.
+
+- Empty text uses `No text to index.`
+- A PDF that cannot be read is saved with that failure message instead of rejecting the request before insert.
+- An indexing failure keeps the row, sets status `error`, and stores the error message.
+- A later successful index clears `errorMessage`.
+- The error document view shows the saved message, the stored text, and **Try again**.
+- `POST /api/documents/:id/retry` indexes the stored text again.
+
+### 6. Google Drive documents
 
 Google Drive is the only external source in this phase. There is no connections page and no folder choice.
 
@@ -192,7 +202,7 @@ One connector interface:
 
 `SyncModule` polls on an interval and on "Sync now". A row lock stops two runs for the same connection. A remote delete marks the document deleted and removes its chunks. The cursor advances only after a successful run.
 
-- **Google Drive.** Uses the document picker and per-document refresh from phase 1.5. Google Docs export as text. PDFs use the phase 1 extractor.
+- **Google Drive.** Uses the document picker and per-document refresh from phase 1.6. Google Docs export as text. PDFs use the phase 1 extractor.
 - **Notion.** Internal integration token, selected pages or a database, blocks flattened to text.
 - **Confluence Cloud.** Site URL, email, API token, one space or parent page.
 

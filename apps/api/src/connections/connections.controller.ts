@@ -33,14 +33,14 @@ export class ConnectionsController {
   ) {
     const origin = process.env.WEB_ORIGIN ?? 'http://localhost:5173';
     if (oauthError || !code || !state) {
-      response.redirect(`${origin}/?drive=error`);
+      response.redirect(`${origin}/documents/new/connect?drive=error`);
       return;
     }
     try {
       const connection = await this.connectionsService.connect(code, state);
-      response.redirect(`${origin}/?drive=${connection.id}`);
+      response.redirect(`${origin}/documents/new/connect?drive=${connection.id}`);
     } catch {
-      response.redirect(`${origin}/?drive=error`);
+      response.redirect(`${origin}/documents/new/connect?drive=error`);
     }
   }
 

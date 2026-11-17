@@ -9,7 +9,7 @@ import {
   type DriveFolder,
 } from '../api/connection.api';
 
-export const Connections = ({ onSynced }: { onSynced: () => void }) => {
+export const Connections = ({ onSynced }: { onSynced?: () => void }) => {
   const [connections, setConnections] = useState<ConnectionSummary[]>([]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [folderId, setFolderId] = useState('');
@@ -73,7 +73,7 @@ export const Connections = ({ onSynced }: { onSynced: () => void }) => {
       const result = await syncConnection(id);
       setNotice(result.skipped ? 'Sync already running.' : 'Sync finished.');
       await refresh();
-      onSynced();
+      onSynced?.();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The request failed.');
     } finally {
